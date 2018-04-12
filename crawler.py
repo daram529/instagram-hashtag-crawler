@@ -3,6 +3,7 @@ import os
 from collections import deque
 from re import findall
 from time import time, sleep
+from datetime import date
 from util import randselect, byteify, file_to_list
 import csv
 
@@ -19,8 +20,16 @@ def visit_profile(api, hashtag, config):
 				'posts' : []
 			}
 			feed = get_posts(api, hashtag, config)
+			print(len(feed))
 			profile_dic = {}
-			posts = [beautify_post(api, post, profile_dic) for post in feed]
+			i = 0
+			posts = []
+			for post in feed:
+				if i % 100 == 0:
+					print(i)
+				posts.append(beautify_post(api, post, profile_dic))
+				i+=1
+			# posts = [beautify_post(api, post, profile_dic) for post in feed]
 			posts = list(filter(lambda x: not x is None, posts))
 			if len(posts) < config['min_collect_media']:
 				return False
@@ -52,51 +61,29 @@ def beautify_post(api, post, profile_dic):
 		if post['media_type'] != 1: # If post is not a single image media
 			return None
 		keys = post.keys()
-		# print(post)
 		user_id = post['user']['pk']
-		profile = profile_dic.get(user_id, False)
-		while True:
-			try:
-				sleep(0.05)
-				if not profile:
-					profile = api.user_info(user_id)
-					profile_dic[user_id] = profile
-			except Exception as e:
-				# print(post)
-				print('exception in getting user_info from {} {}'.format(user_id, post['user']['username']), e)
-				sleep(5)
-				# raise e
-			else:
-				break
-		# profile = api.username_info('simon_oncepiglet')
-		# print(profile)
-		# print('Visiting:', profile['user']['username'])
 		processed_media = {
 			'user_id' : user_id,
-			'username' : profile['user']['username'],
-			'full_name' : profile['user']['full_name'],
-			'profile_pic_url' : profile['user']['profile_pic_url'],
-			'media_count' : profile['user']['media_count'],
-			'follower_count' : profile['user']['follower_count'],
-			'following_count' : profile['user']['following_count'],
-			'date' : post['taken_at'],
+			'username' : post['user']['username'],
+			'date' : date.fromtimestamp(post['taken_at']).strftime('%Y/%m/%d'),
 			'pic_url' : post['image_versions2']['candidates'][0]['url'],
 			'like_count' : post['like_count'] if 'like_count' in keys else 0,
+			'comments' : ["{}: {}".format(comment['user']['username'], comment['text']) for comment in api.media_n_comments(post['caption']['media_id'])] if 'caption' in keys and post['caption'] is not None else '',
 			'comment_count' : post['comment_count'] if 'comment_count' in keys else 0,
 			'caption' : post['caption']['text'] if 'caption' in keys and post['caption'] is not None else ''
 		}
 		processed_media['tags'] = findall(r'#[^#\s]*', processed_media['caption'])
-		# print(processed_media['tags'])
 		return processed_media
 	except Exception as e:
 		print('exception in beautify post')
-		raise e
+		pass
 
 def get_posts(api, hashtag, config):
 	try:
 		feed = []
+		rank_token = api.generate_uuid()
 		try:
-			results = api.feed_tag(hashtag, min_timestamp=config['min_timestamp'])
+			results = api.feed_tag(hashtag, rank_token, min_timestamp=config['min_timestamp'])
 		except Exception as e:
 			print('exception while getting feed1')
 			raise e
@@ -108,16 +95,19 @@ def get_posts(api, hashtag, config):
 		while next_max_id and len(feed) < config['max_collect_media']:
 			print("next_max_id", next_max_id, "len(feed) < max_collect_media", len(feed) < config['max_collect_media'] , len(feed))
 			try:
-				results = api.feed_tag(hashtag, max_id=next_max_id)
+				
+				results = api.feed_tag(hashtag, rank_token, max_id=next_max_id)
 			except Exception as e:
 				print('exception while getting feed2')
 				if str(e) == 'Bad Request: Please wait a few minutes before you try again.':
 					sleep(60)
 				else:
+					continue
 					raise e
 			feed.extend(results.get('items', []))
 			next_max_id = results.get('next_max_id')
-
+		# with open('test.json', 'w') as file:
+		# 	json.dump(feed, file, indent=2)
 		return feed
 
 	except Exception as e:

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*- 
 # @File Name: __init__.py
 # @Created:   2017-05-21 12:30:29  seo (simon.seo@nyu.edu) 
-# @Updated:   2017-05-21 13:41:42  Simon Seo (simon.seo@nyu.edu)
+# @Updated:   2018-04-12 13:41:42  Minkyu Yun (ymk1211@kaist.ac.kr)
 
 import json
 import os.path
@@ -37,7 +37,7 @@ if __name__ == '__main__':
 		'search_algorithm' : 'BFS',               # Possible values: BFS, DFS
 		'profile_path' : './hashtags',              # Path where output data gets saved
 		'min_collect_media' : 1,                # how many media items to be collected per person/hashtag. If time is specified, this is ignored
-		'max_collect_media' : 2000,                # how many media items to be collected per person/hashtag. If time is specified, this is ignored
+		'max_collect_media' : 100,                # how many media items to be collected per person/hashtag. If time is specified, this is ignored
 		# 'min_timestamp' : int(time() - 60*60*24*30*2)         # up to how recent you want the posts to be in seconds. If you do not want to use this, put None as value
 		'min_timestamp' : None
 	}
