@@ -3,9 +3,20 @@ import os
 from collections import deque
 from re import findall
 from time import time, sleep
-from datetime import date
+import datetime
 from util import randselect, byteify, file_to_list
 import csv
+import queue
+
+"""
+Things to do
+
+1. pciture?
+2. carousel? (video or more than one photo)
+3. json to csv
+4. threading for differnet hashtags
+5. get_posts / beautify_post threading
+"""
 
 def crawl(api, hashtag, config):
 	# print('Crawling started at origin hashtag', origin['user']['username'], 'with ID', origin['user']['pk'])
@@ -58,25 +69,37 @@ def visit_profile(api, hashtag, config):
 
 def beautify_post(api, post, profile_dic):
 	try:
-		if post['media_type'] != 1: # If post is not a single image media
-			return None
 		keys = post.keys()
 		user_id = post['user']['pk']
 		processed_media = {
-			'user_id' : user_id,
 			'username' : post['user']['username'],
-			'date' : date.fromtimestamp(post['taken_at']).strftime('%Y/%m/%d'),
-			'pic_url' : post['image_versions2']['candidates'][0]['url'],
+			'date' : datetime.datetime.fromtimestamp(post['taken_at']).strftime('%Y/%m/%d %H:%M:%S'),
 			'like_count' : post['like_count'] if 'like_count' in keys else 0,
-			'comments' : ["{}: {}".format(comment['user']['username'], comment['text']) for comment in api.media_n_comments(post['caption']['media_id'])] if 'caption' in keys and post['caption'] is not None else '',
 			'comment_count' : post['comment_count'] if 'comment_count' in keys else 0,
 			'caption' : post['caption']['text'] if 'caption' in keys and post['caption'] is not None else ''
 		}
 		processed_media['tags'] = findall(r'#[^#\s]*', processed_media['caption'])
+
+		if post['media_type'] == 1:
+			processed_media['post_type'] = "image"
+			processed_media['pic_url'] = post['image_versions2']['candidates'][0]['url']
+		elif post['media_type'] == 2:
+			processed_media['post_type'] = "video"
+			processed_media['vedio_url'] = post['video_versions'][0]['url']
+		else:
+			processed_media['post_type'] = "carousel"
+			urls = []
+			for one_post in post['carousel_media']:
+				if one_post['media_type'] == 1:
+					urls.append(one_post['image_versions2']['candidates'][0]['url'])
+				else:
+					urls.append(one_post['video_versions'][0]['url'])
+			processed_media['urls'] = urls
+		# processed_media['comments'] : ["{}: {}".format(comment['user']['username'], comment['text']) for comment in api.media_n_comments(post['caption']['media_id'])] if 'caption' in keys and post['caption'] is not None else ''
 		return processed_media
 	except Exception as e:
 		print('exception in beautify post')
-		pass
+		return processed_media
 
 def get_posts(api, hashtag, config):
 	try:
@@ -95,7 +118,6 @@ def get_posts(api, hashtag, config):
 		while next_max_id and len(feed) < config['max_collect_media']:
 			print("next_max_id", next_max_id, "len(feed) < max_collect_media", len(feed) < config['max_collect_media'] , len(feed))
 			try:
-				
 				results = api.feed_tag(hashtag, rank_token, max_id=next_max_id)
 			except Exception as e:
 				print('exception while getting feed2')
