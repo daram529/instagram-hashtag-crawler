@@ -9,15 +9,6 @@ from util import randselect, byteify, file_to_list
 import csv
 import queue
 
-"""
-Things to do
-
-1. pciture?
-2. carousel? (video or more than one photo)
-3. json to csv
-4. threading for differnet hashtags
-5. get_posts / beautify_post threading
-"""
 
 def crawl(api, hashtag, config, mode='initial'):
 	if mode == 'initial':
@@ -31,6 +22,7 @@ def crawl(api, hashtag, config, mode='initial'):
 	if visit_profile(api, hashtag, config, mode):
 		pass
 
+
 def visit_profile(api, hashtag, config, mode='initial'):
 	# Now crawling happens in get_posts
 	prev_time = latest_time(hashtag, config)
@@ -39,7 +31,7 @@ def visit_profile(api, hashtag, config, mode='initial'):
 			processed_tagfeed = {
 				'posts' : []
 			}
-			feed = get_posts(api, hashtag, config, mode, prev_time)
+			feed = start_get_posts(api, hashtag, config, mode, prev_time)
 		except Exception as e:
 			print('exception while visiting profile', e)
 			if str(e) == '-':
@@ -54,7 +46,7 @@ def beautify_post(api, post, profile_dic):
 		keys = post.keys()
 		user_id = post['user']['pk']
 		processed_media = {
-			'url': "https://www.instagram.com/p/" + post['code'],
+			'post_url': "https://www.instagram.com/p/" + post['code'],
 			'taken_at': post['taken_at'],
 			'username' : post['user']['username'],
 			'date' : datetime.datetime.fromtimestamp(post['taken_at']).strftime('%Y-%m-%dT%H:%M:%S'),
@@ -78,14 +70,14 @@ def beautify_post(api, post, profile_dic):
 					urls.append(one_post['image_versions2']['candidates'][0]['url'])
 				else:
 					urls.append(one_post['video_versions'][0]['url'])
-			processed_media['urls'] = urls
+			processed_media['carousel_urls'] = urls
 		# processed_media['comments'] : ["{}: {}".format(comment['user']['username'], comment['text']) for comment in api.media_n_comments(post['caption']['media_id'])] if 'caption' in keys and post['caption'] is not None else ''
 		return processed_media
 	except Exception as e:
 		print('exception in beautify post')
 		return processed_media
 
-def get_posts(api, hashtag, config, mode='initial', prev_time=0):
+def start_get_posts(api, hashtag, config, mode='initial', prev_time=0):
 	failures = 0
 	count = 0
 	try:
@@ -113,8 +105,6 @@ def get_posts(api, hashtag, config, mode='initial', prev_time=0):
 					sleep(60)
 				else:
 					continue
-					raise e
-			count += 1
 			feed.extend(results.get('items', []))
 			next_max_id = results.get('next_max_id')
 			if failures > 5:
@@ -131,8 +121,6 @@ def get_posts(api, hashtag, config, mode='initial', prev_time=0):
 				if timeouts > config['batch_size'] / 10:
 					return feed
 				feed = []
-		# with open('test.json', 'w') as file:
-		# 	json.dump(feed, file, indent=2)
 		return feed
 
 	except Exception as e:
@@ -166,6 +154,14 @@ def save_partial(api, hashtag, config, feed, prev_time=None):
 	try:
 		with open(config['profile_path'] + os.sep + str(hashtag) + '/' + file_name + '.json', 'w') as file:
 			json.dump({'posts': posts}, file, indent=2)
+
+		# CSV
+		all_fields = ["post_type", "username", "post_url", "date", "taken_at", "like_count", "comment_count", "caption","tags", "pic_url", "vedio_url", "carousel_urls"]
+		with open(config['profile_path'] + os.sep + str(hashtag) + '/' + file_name + '.csv', 'w') as csv_file:
+			csv_writer = csv.DictWriter(csv_file, all_fields)
+			csv_writer.writeheader()
+			for post in posts:
+				csv_writer.writerow(post)
 	except Exception as e:
 		print('exception while dumping')
 		raise e

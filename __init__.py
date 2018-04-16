@@ -39,7 +39,6 @@ if __name__ == '__main__':
 		'min_collect_media' : 1,                # how many media items to be collected per person/hashtag. If time is specified, this is ignored
 		'max_collect_media' : 1000,                # how many media items to be collected per person/hashtag. If time is specified, this is ignored
 		'batch_size': 100,
-		# 'min_timestamp' : int(time() - 60*60*24*30*2)         # up to how recent you want the posts to be in seconds. If you do not want to use this, put None as value
 		'min_timestamp' : None
 	}
 
