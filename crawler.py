@@ -168,6 +168,7 @@ def save_partial(api, hashtag, config, feed, prev_time=None):
 
 		# CSV
 		all_fields = ["post_type", "username", "post_url", "date", "taken_at", "like_count", "comment_count", "caption","tags", "pic_url", "vedio_url", "carousel_urls"]
+		# all_fields = ["post_type", "username", "post_url", "date", "taken_at", "like_count", "comment_count", "caption", "tags", "comments" "pic_url", "vedio_url", "carousel_urls"]
 		with open(config['profile_path'] + os.sep + str(hashtag) + '/' + file_name + '.csv', 'w') as csv_file:
 			csv_writer = csv.DictWriter(csv_file, all_fields)
 			csv_writer.writeheader()
@@ -196,5 +197,3 @@ def latest_time(hashtag, config):
 		return None
 	recent_time, _ = os.path.splitext(file_list[-1])
 	return recent_time
-	# below is reducing for
-	# return reduce(lambda x, y: max(x, y), [post['taken_at'] for post in data['posts']])

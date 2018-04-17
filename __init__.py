@@ -35,8 +35,8 @@ if __name__ == '__main__':
 	args = parser.parse_args()
 	config = {
 		'profile_path' : './hashtags',              # Path where output data gets saved
-		'batch_size': 100,
-		# 'min_timestamp' : int(time() - 60*60*24*30*2)         # up to how recent you want the posts to be in seconds. If you do not want to use this, put None as value
+		'batch_size': 1000,							# 
+		# 'min_timestamp' : int(time() - 60*60*24*30*12)         # up to how recent you want the posts to be in seconds. If you do not want to use this, put None as value
 		'min_timestamp' : None
 	}
 
