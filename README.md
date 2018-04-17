@@ -34,3 +34,22 @@ config = {
 		'min_timestamp' : None
 }
 ```
+
+## add_info.py
+add_info.py downloads comments and images/videos of posts crawled from `__init__.py` and `crawler.py`.  
+You need to crawl posts first and then use `add_info.py` to download additional information.
+
+```
+$ python add_info.py
+usage: add_info.py [-h] -u USERNAME -p PASSWORD -t TARGET -i image or comments
+```
+
+You may choose to download either image/video using img_config:
+
+```
+img_config = {
+	'image_download' : True,		# download image for single image posts
+	'video_download' : True,		# download videos for single video posts
+	'carousel_download' : True	# download images/videos for multiple image/video posts
+}
+```
