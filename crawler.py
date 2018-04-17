@@ -8,7 +8,7 @@ import datetime
 from util import randselect, byteify, file_to_list
 import csv
 import queue
-
+import sys
 
 def crawl(api, hashtag, config, mode='initial'):
 	if mode == 'initial':
@@ -22,16 +22,17 @@ def crawl(api, hashtag, config, mode='initial'):
 	if visit_profile(api, hashtag, config, mode):
 		pass
 
-
 def visit_profile(api, hashtag, config, mode='initial'):
 	# Now crawling happens in get_posts
 	prev_time = latest_time(hashtag, config)
+	if prev_time is not None:
+		print("Crawling posts upto the time:", prev_time)
 	while True:
 		try:
 			processed_tagfeed = {
 				'posts' : []
 			}
-			feed = start_get_posts(api, hashtag, config, mode, prev_time)
+			feed = get_posts(api, hashtag, config, mode, prev_time)
 		except Exception as e:
 			print('exception while visiting profile', e)
 			if str(e) == '-':
@@ -77,9 +78,10 @@ def beautify_post(api, post, profile_dic):
 		print('exception in beautify post')
 		return processed_media
 
-def start_get_posts(api, hashtag, config, mode='initial', prev_time=0):
+def get_posts(api, hashtag, config, mode='initial', prev_time=0):
 	failures = 0
-	count = 0
+	total_count = 0
+	start_time = time()
 	try:
 		feed = []
 		rank_token = api.generate_uuid()
@@ -90,11 +92,13 @@ def start_get_posts(api, hashtag, config, mode='initial', prev_time=0):
 			raise e
 		feed.extend(results.get('items', []))
 
-		if config['min_timestamp'] is not None: return feed
-
+		batch_time = time()
 		next_max_id = results.get('next_max_id')
-		while next_max_id and count < config['max_collect_media']:
-			print("next_max_id", next_max_id, "len(feed) < max_collect_media", len(feed) < config['max_collect_media'] , len(feed))
+		while next_max_id:
+			current_time = time()
+			# print("hashtag:", hashtag, "/ current_no._posts:", len(feed), "/ total_no._posts:", total_count + len(feed), "/ time_elapsed(sec):", time()-start_time, "/ batch_speed:", (total_count + len(feed))/(time()-batch_time), "posts per sec")
+			sys.stdout.write("hashtag: {} / current batch posts: {} out of {} / total posts: {} / time_elasped: {}h {}m {:.3f}s / batch_speed: {:.3f} posts per sec\r".format(hashtag, len(feed), config['batch_size'], total_count + len(feed), (current_time-start_time)//3600, (current_time-start_time)//60, (current_time-start_time)%60, len(feed) / (time()-batch_time)))
+			sys.stdout.flush()
 			try:
 				results = api.feed_tag(hashtag, rank_token, max_id=next_max_id)
 				failures = 0
@@ -114,12 +118,17 @@ def start_get_posts(api, hashtag, config, mode='initial', prev_time=0):
 			elif mode == 'initial' and len(feed) > config['batch_size']:
 				# dump config['batch_size'] at a time at initial --> can change to 'initial_batch_size' is needed
 				save_partial(api, hashtag, config, feed)
+				total_count += len(feed)
+				batch_time = time()
 				feed = []
 			elif mode == 'surface' and len(feed) > config['batch_size']:
 				# dump config['batch_size'] at a time at surface --> can change to 'surface_batch_size' is needed
 				timeouts = save_partial(api, hashtag, config, feed, prev_time=prev_time)
-				if timeouts > config['batch_size'] / 10:
+				if timeouts > config['batch_size'] / 2:
+					print("sutface mode: reached overlapping posts. ==> timeout")
 					return feed
+				total_count += len(feed)
+				batch_time = time()
 				feed = []
 		return feed
 
@@ -138,8 +147,10 @@ def save_partial(api, hashtag, config, feed, prev_time=None):
 	if prev_time is not None:
 		# If prev_time is provided, it means it's surface crawlng
 		# --> filter out the ones that are from before prev_time
-		time_count = len(list(filter(lambda x: x['taken_at'] < prev_time, posts)))
-		posts = list(filter(lambda x: x['taken_at'] > prev_time, posts))
+		timeouts = len(list(filter(lambda x: x['date'] < prev_time, posts)))
+		posts = list(filter(lambda x: x['date'] > prev_time, posts))
+		print("")
+		print("Savings... timeout posts: {} / saved posts: {} out of {}".format(timeouts, len(posts), timeouts+len(posts)))
 	try:
 		if not os.path.exists(config['profile_path'] + os.sep):
 			os.makedirs(config['profile_path'])
@@ -162,6 +173,7 @@ def save_partial(api, hashtag, config, feed, prev_time=None):
 			csv_writer.writeheader()
 			for post in posts:
 				csv_writer.writerow(post)
+
 	except Exception as e:
 		print('exception while dumping')
 		raise e
@@ -179,11 +191,10 @@ def latest_time(hashtag, config):
 		print('exception in profile path')
 		raise e
 	file_list = os.listdir(config['profile_path'] + os.sep + hashtag)
-	file_list = list(filter(lambda x: x[-4:] == 'json', file_list)).sort()
+	file_list.sort()
 	if file_list is None or len(file_list) == 0:
 		return None
-	with open(config['profile_path'] + os.sep + hashtag + os.sep + file_list[-1]) as f:
-		data = json.load(f)
-	return file_list[-1]
+	recent_time, _ = os.path.splitext(file_list[-1])
+	return recent_time
 	# below is reducing for
 	# return reduce(lambda x, y: max(x, y), [post['taken_at'] for post in data['posts']])

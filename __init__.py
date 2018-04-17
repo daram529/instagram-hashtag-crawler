@@ -9,7 +9,7 @@ import os.path
 import argparse
 import multiprocessing as mp
 import csv
-from time import time
+from time import time, sleep
 from collections import deque
 from util import file_to_list
 from crawler import crawl
@@ -34,11 +34,9 @@ if __name__ == '__main__':
 
 	args = parser.parse_args()
 	config = {
-		'search_algorithm' : 'BFS',               # Possible values: BFS, DFS
 		'profile_path' : './hashtags',              # Path where output data gets saved
-		'min_collect_media' : 1,                # how many media items to be collected per person/hashtag. If time is specified, this is ignored
-		'max_collect_media' : 1000,                # how many media items to be collected per person/hashtag. If time is specified, this is ignored
 		'batch_size': 100,
+		# 'min_timestamp' : int(time() - 60*60*24*30*2)         # up to how recent you want the posts to be in seconds. If you do not want to use this, put None as value
 		'min_timestamp' : None
 	}
 
@@ -58,14 +56,13 @@ if __name__ == '__main__':
 		print("Initiating API")
 
 	try:
-		# jobs = []
+		jobs = []
 		while True:
 			for origin in origin_names:
 				crawl(api, origin, config)
 				# p = mp.Process(target=crawl, args=(api, origin, config))
 				# jobs.append(p)
 				# p.start()
-			sleep(60 * 30)
 			for i in range(60 * 30):
 				print('Waiting {} secs\r'.format(str(1800 - i).zfill(4)), end='')
 				sleep(1)
@@ -73,6 +70,5 @@ if __name__ == '__main__':
 		print('Jobs terminated')
 	except Exception as e:
 		raise e
-		print(e)
 	# for p in jobs:
 	# 	p.join()
