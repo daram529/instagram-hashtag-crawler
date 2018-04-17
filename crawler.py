@@ -53,7 +53,8 @@ def beautify_post(api, post, profile_dic):
 			'date' : datetime.datetime.fromtimestamp(post['taken_at']).strftime('%Y-%m-%dT%H:%M:%S'),
 			'like_count' : post['like_count'] if 'like_count' in keys else 0,
 			'comment_count' : post['comment_count'] if 'comment_count' in keys else 0,
-			'caption' : post['caption']['text'] if 'caption' in keys and post['caption'] is not None else ''
+			'caption' : post['caption']['text'] if 'caption' in keys and post['caption'] is not None else '',
+			'media_id' : post['caption']['media_id'] if 'caption' in keys and post['caption'] is not None else ''
 		}
 		processed_media['tags'] = findall(r'#[^#\s]*', processed_media['caption'])
 
@@ -167,8 +168,7 @@ def save_partial(api, hashtag, config, feed, prev_time=None):
 			json.dump({'posts': posts}, file, indent=2)
 
 		# CSV
-		all_fields = ["post_type", "username", "post_url", "date", "taken_at", "like_count", "comment_count", "caption","tags", "pic_url", "vedio_url", "carousel_urls"]
-		# all_fields = ["post_type", "username", "post_url", "date", "taken_at", "like_count", "comment_count", "caption", "tags", "comments" "pic_url", "vedio_url", "carousel_urls"]
+		all_fields = ["post_type", "username", "post_url", "date", "taken_at", "like_count", "comment_count", "caption","tags", "pic_url", "vedio_url", "carousel_urls", "media_id"]
 		with open(config['profile_path'] + os.sep + str(hashtag) + '/' + file_name + '.csv', 'w') as csv_file:
 			csv_writer = csv.DictWriter(csv_file, all_fields)
 			csv_writer.writeheader()
