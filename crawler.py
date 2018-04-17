@@ -145,12 +145,12 @@ def save_partial(api, hashtag, config, feed, prev_time=None):
 	for post in feed:
 		posts.append(beautify_post(api, post, {}))
 	posts = list(filter(lambda x: x is not None, posts))
+	print("")
 	if prev_time is not None:
 		# If prev_time is provided, it means it's surface crawlng
 		# --> filter out the ones that are from before prev_time
 		timeouts = len(list(filter(lambda x: x['date'] < prev_time, posts)))
 		posts = list(filter(lambda x: x['date'] > prev_time, posts))
-		print("")
 		print("Savings... timeout posts: {} / saved posts: {} out of {}".format(timeouts, len(posts), timeouts+len(posts)))
 	try:
 		if not os.path.exists(config['profile_path'] + os.sep):
