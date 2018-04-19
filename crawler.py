@@ -164,12 +164,12 @@ def save_partial(api, hashtag, config, feed, prev_time=None):
 	file_date = reduce(lambda x, y: max(x, y), [post['taken_at'] for post in posts])
 	file_name = strftime('%Y-%m-%dT%H:%M:%S', localtime(file_date))
 	try:
-		with open(config['profile_path'] + os.sep + str(hashtag) + '/' + file_name + '.json', 'w') as file:
+		with open(config['profile_path'] + os.sep + str(hashtag) + os.sep + file_name + '.json', 'w') as file:
 			json.dump({'posts': posts}, file, indent=2)
 
 		# CSV
 		all_fields = ["post_type", "username", "post_url", "date", "taken_at", "like_count", "comment_count", "caption","tags", "pic_url", "vedio_url", "carousel_urls", "media_id"]
-		with open(config['profile_path'] + os.sep + str(hashtag) + '/' + file_name + '.csv', 'w') as csv_file:
+		with open(config['profile_path'] + os.sep + str(hashtag) + os.sep + file_name + '.csv', 'w') as csv_file:
 			csv_writer = csv.DictWriter(csv_file, all_fields)
 			csv_writer.writeheader()
 			for post in posts:

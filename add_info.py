@@ -24,7 +24,7 @@ except ImportError:
 	from instagram_private_api import (
 		Client, __version__ as client_version)
 
-profile_path = './hashtags'			# path where posts are saved
+profile_path = '.' + os.sep + 'hashtags'			# path where posts are saved
 
 # for comments
 included_cols = ['username', 'post_url', 'date', 'media_id']
@@ -142,15 +142,15 @@ if __name__ == '__main__':
 		    	csv_file_list.append(file)
 
 		# comments
-		if not os.path.exists(profile_path + '/' + target + "_comments"):
-			os.makedirs(profile_path + '/' + target + "_comments")
-		csv_write_path = profile_path + '/' + target + "_comments"
+		if not os.path.exists(profile_path + os.sep + target + "_comments"):
+			os.makedirs(profile_path + os.sep + target + "_comments")
+		csv_write_path = profile_path + os.sep + target + "_comments"
 		print(csv_write_path)
 
 		# images
-		if not os.path.exists(profile_path + '/' + target + "_images"):
-			os.makedirs(profile_path + '/' + target + "_images")
-		images_path = profile_path + '/' + target + "_images"
+		if not os.path.exists(profile_path + os.sep + target + "_images"):
+			os.makedirs(profile_path + os.sep + target + "_images")
+		images_path = profile_path + os.sep + target + "_images"
 		print(images_path)
 	else:
 		raise Exception("No hashtag folder exists")
