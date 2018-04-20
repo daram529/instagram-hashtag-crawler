@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import json
 import os
 from functools import reduce
@@ -96,7 +97,7 @@ def get_posts(api, hashtag, config, mode='initial', prev_time=0):
 		batch_time = time()-1
 		next_max_id = results.get('next_max_id')
 		while next_max_id:
-			current_time = time()
+			current_time = time() + 1
 			# print("hashtag:", hashtag, "/ current_no._posts:", len(feed), "/ total_no._posts:", total_count + len(feed), "/ time_elapsed(sec):", time()-start_time, "/ batch_speed:", (total_count + len(feed))/(time()-batch_time), "posts per sec")
 			sys.stdout.write("hashtag: {} / current batch posts: {} out of {} / total posts: {} / time_elasped: {}h {}m {:.3f}s / batch_speed: {:.3f} posts per sec\r".format(hashtag, len(feed), config['batch_size'], total_count + len(feed), (current_time-start_time)//3600, (current_time-start_time)//60, (current_time-start_time)%60, len(feed) / (current_time-batch_time)))
 			sys.stdout.flush()
@@ -152,6 +153,8 @@ def save_partial(api, hashtag, config, feed, prev_time=None):
 		timeouts = len(list(filter(lambda x: x['date'] < prev_time, posts)))
 		posts = list(filter(lambda x: x['date'] > prev_time, posts))
 		print("Savings... timeout posts: {} / saved posts: {} out of {}".format(timeouts, len(posts), timeouts+len(posts)))
+	else:
+		print("Savings... saved posts: {}".format(len(posts)))
 	try:
 		if not os.path.exists(config['profile_path'] + os.path.sep):
 			os.makedirs(config['profile_path'])
@@ -169,7 +172,7 @@ def save_partial(api, hashtag, config, feed, prev_time=None):
 
 		# CSV
 		all_fields = ["post_type", "username", "post_url", "date", "taken_at", "like_count", "comment_count", "caption","tags", "pic_url", "vedio_url", "carousel_urls", "media_id"]
-		with open(os.path.join(os.path.join(config['profile_path'], str(hashtag)), file_name + '.csv'), 'w') as csv_file:
+		with open(os.path.join(os.path.join(config['profile_path'], str(hashtag)), file_name + '.csv'), 'w', encoding='utf8') as csv_file:
 			csv_writer = csv.DictWriter(csv_file, all_fields)
 			csv_writer.writeheader()
 			for post in posts:
